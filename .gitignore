@@ -1,0 +1,11 @@
+node_modules/
+.venv/
+.env
+*.log
+.DS_Store
+dist/
+build/
+.expo/
+*.tsbuildinfo
+__pycache__/
+.claude/

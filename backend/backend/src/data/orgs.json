@@ -1,0 +1,26 @@
+[
+  {
+    "id": "fire-dept-01",
+    "orgName": "City Fire Department",
+    "department": "fire",
+    "passwordHash": "$2a$10$YE8PSmRX02plg77tydItfO5Od165n2JJa3N8zslt4Bgy2vMbREqoC"
+  },
+  {
+    "id": "medical-01",
+    "orgName": "Emergency Medical Service",
+    "department": "medical",
+    "passwordHash": "$2a$10$ty8tXroSrPhYZ6KmjEzVB.z3Meof6wYDgfdCs9mqA9tC90LEvFDWK"
+  },
+  {
+    "id": "police-01",
+    "orgName": "City Police Department",
+    "department": "police",
+    "passwordHash": "$2a$10$CpYPoHPDVs7YEJ9hfP/92.5DbtvSBcAMfuKsQYwEW8FsG6muZMyGe"
+  },
+  {
+    "id": "defense-01",
+    "orgName": "Civil Defense Authority",
+    "department": "defense",
+    "passwordHash": "$2a$10$WEeDQvOMG6TFgdD/G6f4WeujGX.xOH7qB/ZvVrlzxHIG1UNtekJAa"
+  }
+]

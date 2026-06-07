@@ -1,0 +1,134 @@
+{
+  "info": {
+    "name": "ARIA Emergency Response",
+    "description": "All ARIA backend routes with example payloads.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:3000" },
+    { "key": "agentSecret", "value": "internal-agent-shared-secret" },
+    { "key": "token", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "health",
+      "request": {
+        "method": "GET",
+        "url": { "raw": "{{baseUrl}}/health", "host": ["{{baseUrl}}"], "path": ["health"] }
+      }
+    },
+    {
+      "name": "auth/login (Police)",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": { "raw": "{{baseUrl}}/auth/login", "host": ["{{baseUrl}}"], "path": ["auth", "login"] },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"orgId\": \"police-01\",\n  \"password\": \"police2024!\"\n}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "const json = pm.response.json();",
+              "if (json.token) pm.collectionVariables.set('token', json.token);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "auth/me",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+        "url": { "raw": "{{baseUrl}}/auth/me", "host": ["{{baseUrl}}"], "path": ["auth", "me"] }
+      }
+    },
+    {
+      "name": "token (create LiveKit access token)",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": { "raw": "{{baseUrl}}/token", "host": ["{{baseUrl}}"], "path": ["token"] },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"identity\": \"caller-test-001\"\n}"
+        }
+      }
+    },
+    {
+      "name": "alert (agent → backend) — Police CRITICAL",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "X-Agent-Secret", "value": "{{agentSecret}}" }
+        ],
+        "url": { "raw": "{{baseUrl}}/alert", "host": ["{{baseUrl}}"], "path": ["alert"] },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"department\": \"police\",\n  \"severity\": \"critical\",\n  \"summary\": \"Armed intruder in caller's home\",\n  \"actions\": [\n    \"Dispatch nearest patrol to caller location\",\n    \"Advise caller to move to a locked room\",\n    \"Notify SWAT supervisor on duty\"\n  ],\n  \"callerLocation\": \"742 Evergreen Terrace, Springfield\",\n  \"transcript\": \"Caller: Someone broke in...\\nARIA: You're safe to talk...\",\n  \"roomName\": \"room-test-001\"\n}"
+        }
+      }
+    },
+    {
+      "name": "alert — Medical HIGH",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "X-Agent-Secret", "value": "{{agentSecret}}" }
+        ],
+        "url": { "raw": "{{baseUrl}}/alert", "host": ["{{baseUrl}}"], "path": ["alert"] },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"department\": \"medical\",\n  \"severity\": \"high\",\n  \"summary\": \"Adult unconscious after fall, breathing labored\",\n  \"actions\": [\n    \"Dispatch ambulance with ALS crew\",\n    \"Prep ER trauma bay\",\n    \"Notify on-call neuro\"\n  ],\n  \"callerLocation\": \"Apt 4B, 122 Oak St\",\n  \"roomName\": \"room-test-002\"\n}"
+        }
+      }
+    },
+    {
+      "name": "cases (list department's cases)",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+        "url": { "raw": "{{baseUrl}}/cases", "host": ["{{baseUrl}}"], "path": ["cases"] }
+      }
+    },
+    {
+      "name": "cases/:id/status (mark responding)",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{token}}" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/cases/REPLACE_CASE_ID/status",
+          "host": ["{{baseUrl}}"],
+          "path": ["cases", "REPLACE_CASE_ID", "status"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"status\": \"responding\"\n}"
+        }
+      }
+    },
+    {
+      "name": "upload (multipart photo)",
+      "request": {
+        "method": "POST",
+        "url": { "raw": "{{baseUrl}}/upload", "host": ["{{baseUrl}}"], "path": ["upload"] },
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            { "key": "photo", "type": "file", "src": [] }
+          ]
+        }
+      }
+    }
+  ]
+}

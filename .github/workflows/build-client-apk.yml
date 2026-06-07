@@ -1,0 +1,100 @@
+name: Build Client APK
+
+on:
+  push:
+    branches: [master, main]
+    paths:
+      - 'client/**'
+      - '.github/workflows/build-client-apk.yml'
+  pull_request:
+    branches: [master, main]
+    paths:
+      - 'client/**'
+      - '.github/workflows/build-client-apk.yml'
+  workflow_dispatch:
+    inputs:
+      build_type:
+        description: 'Gradle build variant'
+        required: true
+        default: 'debug'
+        type: choice
+        options:
+          - debug
+          - release
+
+jobs:
+  build-apk:
+    name: Build Android APK
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: client
+
+    env:
+      EXPO_PUBLIC_BACKEND_URL: ${{ vars.EXPO_PUBLIC_BACKEND_URL || 'http://localhost:3000' }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: client/package-lock.json
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Resolve build variant
+        id: variant
+        run: |
+          variant="${{ github.event.inputs.build_type }}"
+          if [ -z "$variant" ]; then variant="debug"; fi
+          echo "value=$variant" >> "$GITHUB_OUTPUT"
+          if [ "$variant" = "release" ]; then
+            echo "gradle_task=assembleRelease" >> "$GITHUB_OUTPUT"
+            echo "apk_dir=android/app/build/outputs/apk/release" >> "$GITHUB_OUTPUT"
+          else
+            echo "gradle_task=assembleDebug" >> "$GITHUB_OUTPUT"
+            echo "apk_dir=android/app/build/outputs/apk/debug" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Install npm dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Expo prebuild (generate android/)
+        run: npx expo prebuild --platform android --no-install --clean
+
+      - name: Make gradlew executable
+        run: chmod +x android/gradlew
+
+      - name: Build APK (${{ steps.variant.outputs.value }})
+        working-directory: client/android
+        run: ./gradlew ${{ steps.variant.outputs.gradle_task }} --no-daemon --stacktrace
+
+      - name: Locate APK
+        id: apk
+        run: |
+          apk_path=$(find ${{ steps.variant.outputs.apk_dir }} -name "*.apk" | head -n 1)
+          if [ -z "$apk_path" ]; then
+            echo "No APK found in ${{ steps.variant.outputs.apk_dir }}" >&2
+            exit 1
+          fi
+          echo "path=$apk_path" >> "$GITHUB_OUTPUT"
+          echo "Built APK: $apk_path"
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: aria-client-${{ steps.variant.outputs.value }}-${{ github.sha }}
+          path: client/${{ steps.apk.outputs.path }}
+          if-no-files-found: error
+          retention-days: 14

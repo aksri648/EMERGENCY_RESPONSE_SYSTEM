@@ -73,6 +73,35 @@ jobs:
       - name: Expo prebuild (generate android/)
         run: npx expo prebuild --platform android --no-install --clean
 
+      - name: Patch hermesCommand for RN 0.81
+        # expo prebuild emits a hermesCommand line that resolves the
+        # `hermes-compiler` package, which does not exist in RN 0.81
+        # (hermesc ships inside react-native/sdks/hermesc). Rewrite it
+        # to the correct path so gradle can evaluate :app.
+        run: |
+          python3 - <<'PY'
+          import pathlib, re
+          p = pathlib.Path('android/app/build.gradle')
+          text = p.read_text()
+          new_line = (
+              'hermesCommand = new File(["node", "--print", '
+              '"require.resolve(\\\'react-native/package.json\\\')"]'
+              '.execute(null, rootDir).text.trim())'
+              '.getParentFile().getAbsolutePath() '
+              '+ "/sdks/hermesc/%OS-BIN%/hermesc"'
+          )
+          patched, n = re.subn(
+              r'hermesCommand = .*hermes-compiler.*',
+              new_line,
+              text,
+          )
+          if n == 0:
+              print('hermesCommand line did not match — leaving as-is')
+          else:
+              p.write_text(patched)
+              print(f'Patched {n} hermesCommand line(s)')
+          PY
+
       - name: Make gradlew executable
         run: chmod +x android/gradlew
 

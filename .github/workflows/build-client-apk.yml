@@ -68,7 +68,7 @@ jobs:
           fi
 
       - name: Install npm dependencies
-        run: npm ci --no-audit --no-fund
+        run: npm ci --legacy-peer-deps --no-audit --no-fund
 
       - name: Expo prebuild (generate android/)
         run: npx expo prebuild --platform android --no-install --clean
